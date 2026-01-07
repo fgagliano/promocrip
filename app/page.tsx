@@ -198,6 +198,13 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
+useEffect(() => {
+  if (carteira.length === 0) return;
+  preencherFormComCarteiraAtual();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [carteira]);
+
+  
   function preencherComCarteiraAtual() {
     const map = new Map(carteira.map((c) => [c.cripto, c.valor_atual]));
     setForm({
