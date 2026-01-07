@@ -358,6 +358,45 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
             )}
           </section>
 
+<section style={{ marginTop: 22 }}>
+  <h2 style={{ marginBottom: 8 }}>Renda Fixa</h2>
+
+  {rendaFixa.length === 0 ? (
+    <p>Nenhuma renda fixa cadastrada.</p>
+  ) : (
+    <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+      {rendaFixa.map((rf) => (
+        <div
+          key={rf.id}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 160px",
+            gap: 10,
+            alignItems: "center",
+          }}
+        >
+          <span>
+            <b>{rf.nome}</b>
+          </span>
+
+          <input
+            defaultValue={rf.saldo.toString()}
+            inputMode="decimal"
+            onBlur={(e) => atualizarRendaFixa(rf.id, e.target.value)}
+            style={{
+              padding: 8,
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              textAlign: "right",
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  )}
+</section>
+
+          
           {/* Atualização */}
           <section style={{ marginTop: 22 }}>
             <h2 style={{ marginBottom: 8 }}>Registrar atualização (snapshot)</h2>
