@@ -115,6 +115,21 @@ const [rendaFixa, setRendaFixa] = useState<RendaFixa[]>([]);
     lista.sort((a, b) => ORDEM.indexOf(a.cripto) - ORDEM.indexOf(b.cripto));
     setCarteira(lista);
 
+const { data: rfData, error: rfErr } = await supabase
+  .schema("cripto")
+  .from("carteira_renda_fixa")
+  .select("id, nome, saldo")
+  .order("id");
+
+if (rfErr) {
+  setErro(`Erro ao ler carteira_renda_fixa: ${rfErr.message}`);
+  setLoading(false);
+  return;
+}
+
+setRendaFixa((rfData ?? []) as RendaFixa[]);
+
+    
     const { data: resumoData, error: resumoErr } = await supabase
       .schema("cripto")
       .from("vw_resumo_periodo")
