@@ -241,6 +241,28 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
 
     setMsg(`Cripto vencedora (baseline ≥ 3 dias): ${data}`);
   }
+async function atualizarRendaFixa(id: number, novoValor: string) {
+  if (!supabase) return;
+
+  const valor = parseMoney(novoValor);
+  if (!Number.isFinite(valor)) return;
+
+  const { error } = await supabase
+    .schema("cripto")
+    .from("carteira_renda_fixa")
+    .update({
+      saldo: valor,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    setErro(`Erro ao atualizar renda fixa: ${error.message}`);
+    return;
+  }
+
+  await carregarTudo();
+}
 
   return (
     <main style={{ padding: 20, fontFamily: "system-ui, Arial" }}>
