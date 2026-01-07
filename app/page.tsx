@@ -7,6 +7,7 @@ type Cripto = "BTC" | "ETH" | "LINK" | "LTC" | "UNI" | "MELI_DOLAR";
 
 type ResumoPeriodo = {
   cutoff_id: number;
+  cutoff_criado_em: string;
   saldo_cripto_no_corte: number;
   total_cripto_atual: number;
   total_sacado_desde_corte: number;
