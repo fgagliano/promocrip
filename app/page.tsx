@@ -244,9 +244,9 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
 async function atualizarRendaFixa(id: number, novoValor: string) {
   if (!supabase) return;
 
-const valor = novoValor.includes(",")
-  ? parseMoney(novoValor)
-  : Number(novoValor);
+const valor = parseMoney(novoValor);
+
+  
   if (!Number.isFinite(valor)) return;
 
   const { error } = await supabase
