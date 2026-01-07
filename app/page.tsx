@@ -5,4 +5,4 @@ export default function Page() {
       <p>Deploy inicial OK. Próximo passo: conectar ao Supabase.</p>
     </main>
   );
-}
+} 
