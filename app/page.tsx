@@ -99,6 +99,10 @@ function parseMoneySmart(input: string) {
   return Number(s);
 }
 
+function parseMoney(input: string) {
+  return parseMoneySmart(input);
+}
+
 
 export default function Page() {
   const supabase = useMemo(() => {
