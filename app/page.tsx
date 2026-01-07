@@ -404,7 +404,7 @@ const valor = novoValor.includes(",")
           </span>
 
           <input
-            defaultValue={rf.saldo.toString()}
+            defaultValue={fmtBRL(rf.saldo).replace("R$", "").trim()}
             inputMode="decimal"
             onBlur={(e) => atualizarRendaFixa(rf.id, e.target.value)}
             style={{
