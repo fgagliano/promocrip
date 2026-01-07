@@ -85,6 +85,9 @@ export default function Page() {
     MELI_DOLAR: "",
   });
 
+const [rendaFixa, setRendaFixa] = useState<RendaFixa[]>([]);
+
+  
   async function carregarTudo() {
     if (!supabase) {
       setErro("Env do Supabase não carregou (URL/ANON_KEY).");
