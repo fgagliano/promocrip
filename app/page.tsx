@@ -51,15 +51,54 @@ function fmtPct(v: number | null | undefined) {
   return `${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 }
 
-function parseMoney(s: string) {
-  const cleaned = s
-    .trim()
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .replace(/[^\d.-]/g, "");
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : 0;
+function parseMoneySmart(input: string) {
+  // Aceita: "60.88", "60,88", "6.088,00", "6,088.00", "6088", "6 088,00"
+  let s = (input ?? "").trim();
+
+  // remove espaços e "R$"
+  s = s.replace(/\s/g, "").replace(/^R\$\s?/, "");
+
+  // mantém só dígitos, ponto, vírgula e sinal
+  s = s.replace(/[^\d.,-]/g, "");
+
+  if (!s) return 0;
+
+  const lastDot = s.lastIndexOf(".");
+  const lastComma = s.lastIndexOf(",");
+
+  // Caso 1: tem ponto E vírgula -> o último que aparecer é o separador decimal
+  if (lastDot !== -1 && lastComma !== -1) {
+    const decimalSep = lastDot > lastComma ? "." : ",";
+    const thousandSep = decimalSep === "." ? "," : ".";
+
+    s = s.replaceAll(thousandSep, "");
+    s = decimalSep === "," ? s.replaceAll(",", ".") : s;
+    return Number(s);
+  }
+
+  // Caso 2: só vírgula -> vírgula é decimal
+  if (lastComma !== -1) {
+    s = s.replaceAll(".", "");   // pontos são milhar
+    s = s.replaceAll(",", ".");  // vírgula vira decimal
+    return Number(s);
+  }
+
+  // Caso 3: só ponto -> pode ser decimal (60.88) OU milhar (6.088)
+  if (lastDot !== -1) {
+    const parts = s.split(".");
+    // Heurística: se só tem 1 ponto e exatamente 2 dígitos após ele -> é decimal
+    if (parts.length === 2 && parts[1].length === 2) {
+      return Number(s);
+    }
+    // senão, considera ponto como separador de milhar
+    s = s.replaceAll(".", "");
+    return Number(s);
+  }
+
+  // Caso 4: só dígitos
+  return Number(s);
 }
+
 
 export default function Page() {
   const supabase = useMemo(() => {
