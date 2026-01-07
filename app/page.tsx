@@ -436,6 +436,10 @@ export default function Page() {
               <div style={{ padding: 12, borderRadius: 10, border: "1px solid #ddd" }}>
                 <div style={{ display: "grid", gap: 8 }}>
                   <div>
+    <b>Data do corte:</b>{" "}
+    {new Date(resumo.cutoff_criado_em).toLocaleString("pt-BR")}
+  </div>
+                  <div>
                     <b>Saldo no corte:</b> {fmtBRL(resumo.saldo_cripto_no_corte)}
                   </div>
                   <div>
