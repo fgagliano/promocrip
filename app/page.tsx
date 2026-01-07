@@ -1,8 +1,435 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+type Cripto = "BTC" | "ETH" | "LINK" | "LTC" | "UNI";
+
+type ResumoPeriodo = {
+  cutoff_id: number;
+  saldo_cripto_no_corte: number;
+  total_cripto_atual: number;
+  total_sacado_desde_corte: number;
+  lucro_ajustado_periodo: number;
+  blocos_200: number;
+  saques_ja_feitos: number;
+  saques_permitidos_agora: number;
+};
+
+type CarteiraCripto = {
+  cripto: Cripto;
+  valor_atual: number;
+  valor_investido: number;
+};
+
+function fmtBRL(v: number | null | undefined) {
+  const n = typeof v === "number" && Number.isFinite(v) ? v : 0;
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function parseMoney(s: string) {
+  // aceita "1234,56" ou "1.234,56" ou "1234.56"
+  const cleaned = s
+    .trim()
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .replace(/[^\d.-]/g, "");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export default function Page() {
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    return createClient(url, key);
+  }, []);
+
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState<string>("");
+  const [erro, setErro] = useState<string>("");
+
+  const [carteira, setCarteira] = useState<CarteiraCripto[]>([]);
+  const [resumo, setResumo] = useState<ResumoPeriodo | null>(null);
+
+  const [form, setForm] = useState<Record<Cripto, string>>({
+    BTC: "",
+    ETH: "",
+    LINK: "",
+    LTC: "",
+    UNI: "",
+  });
+
+  async function carregarTudo() {
+    if (!supabase) {
+      setErro("Env do Supabase não carregou (URL/ANON_KEY).");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setErro("");
+    setMsg("");
+
+    // carteira atual
+    const { data: carteiraData, error: carteiraErr } = await supabase
+      .schema("cripto")
+      .from("carteira_cripto")
+      .select("cripto, valor_atual, valor_investido")
+      .order("cripto", { ascending: true });
+
+    if (carteiraErr) {
+      setErro(`Erro ao ler carteira_cripto: ${carteiraErr.message}`);
+      setLoading(false);
+      return;
+    }
+    setCarteira((carteiraData ?? []) as CarteiraCripto[]);
+
+    // resumo do período
+    const { data: resumoData, error: resumoErr } = await supabase
+      .schema("cripto")
+      .from("vw_resumo_periodo")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (resumoErr) {
+      setErro(
+        `Erro ao ler vw_resumo_periodo: ${resumoErr.message} (você já criou um cutoff?)`
+      );
+      setResumo(null);
+      setLoading(false);
+      return;
+    }
+
+    setResumo((resumoData ?? null) as ResumoPeriodo | null);
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    carregarTudo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
+
+  function preencherComCarteiraAtual() {
+    const map = new Map(carteira.map((c) => [c.cripto, c.valor_atual]));
+    setForm({
+      BTC: map.get("BTC")?.toString() ?? "",
+      ETH: map.get("ETH")?.toString() ?? "",
+      LINK: map.get("LINK")?.toString() ?? "",
+      LTC: map.get("LTC")?.toString() ?? "",
+      UNI: map.get("UNI")?.toString() ?? "",
+    });
+  }
+
+  async function registrarAtualizacao() {
+    if (!supabase) return;
+    setErro("");
+    setMsg("");
+
+    const valores = {
+      BTC: parseMoney(form.BTC),
+      ETH: parseMoney(form.ETH),
+      LINK: parseMoney(form.LINK),
+      LTC: parseMoney(form.LTC),
+      UNI: parseMoney(form.UNI),
+    };
+
+    // valida mínimo: pelo menos um > 0
+    const soma = Object.values(valores).reduce((a, b) => a + b, 0);
+    if (soma <= 0) {
+      setErro("Preencha ao menos um valor (maior que zero).");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .schema("cripto")
+      .rpc("fn_registrar_snapshot", {
+        valores, // jsonb
+        obs: "Atualização manual via web",
+      });
+
+    if (error) {
+      setErro(`Erro ao registrar snapshot: ${error.message}`);
+      return;
+    }
+
+    setMsg(`Atualização registrada (snapshot id: ${data}).`);
+    await carregarTudo();
+  }
+
+  async function sacarAutomatico() {
+    if (!supabase) return;
+    setErro("");
+    setMsg("");
+
+    const { data, error } = await supabase
+      .schema("cripto")
+      .rpc("fn_executar_saque_automatico", {
+        valor_saque: 50,
+        dias_min: 3,
+        obs: "Coloquei no CDI do Mercado Livre",
+      });
+
+    if (error) {
+      setErro(`Erro no saque: ${error.message}`);
+      return;
+    }
+
+    setMsg(`Saque executado (id: ${data}).`);
+    await carregarTudo();
+  }
+
+  async function verVencedora() {
+    if (!supabase) return;
+    setErro("");
+    setMsg("");
+
+    const { data, error } = await supabase
+      .schema("cripto")
+      .rpc("fn_escolher_cripto_vencedora", { dias_min: 3 });
+
+    if (error) {
+      setErro(`Erro ao calcular vencedora: ${error.message}`);
+      return;
+    }
+
+    setMsg(`Cripto vencedora (baseline ≥ 3 dias): ${data}`);
+  }
+
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui, Arial" }}>
-      <h1>PromoCrip</h1>
-      <p>Deploy inicial OK. Próximo passo: conectar ao Supabase.</p>
+    <main style={{ padding: 20, fontFamily: "system-ui, Arial" }}>
+      <h1 style={{ margin: 0 }}>PromoCrip</h1>
+      <p style={{ marginTop: 6, color: "#555" }}>
+        Atualize saldos, acompanhe lucro ajustado (tipo sua E45) e execute saque automático.
+      </p>
+
+      {!supabase && (
+        <div style={{ padding: 12, border: "1px solid #f00", borderRadius: 10 }}>
+          <b>Env vars não carregadas.</b>
+          <div>
+            Confere no Vercel se existem: NEXT_PUBLIC_SUPABASE_URL e
+            NEXT_PUBLIC_SUPABASE_ANON_KEY, e se já houve um redeploy depois de criar.
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <p>Carregando…</p>
+      ) : (
+        <>
+          {(erro || msg) && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: 12,
+                borderRadius: 10,
+                border: `1px solid ${erro ? "#ff4d4f" : "#52c41a"}`,
+                background: erro ? "#fff1f0" : "#f6ffed",
+              }}
+            >
+              {erro ? <b style={{ color: "#a8071a" }}>{erro}</b> : <b>{msg}</b>}
+            </div>
+          )}
+
+          {/* Carteira */}
+          <section style={{ marginTop: 18 }}>
+            <h2 style={{ marginBottom: 8 }}>Carteira (estado atual)</h2>
+
+            {carteira.length === 0 ? (
+              <p>Nenhuma linha em carteira_cripto ainda.</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    minWidth: 520,
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #ddd" }}>
+                        Cripto
+                      </th>
+                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
+                        Atual (C)
+                      </th>
+                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
+                        Investido (D)
+                      </th>
+                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
+                        Lucro
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {carteira.map((c) => {
+                      const lucro = (c.valor_atual ?? 0) - (c.valor_investido ?? 0);
+                      return (
+                        <tr key={c.cripto}>
+                          <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
+                            <b>{c.cripto}</b>
+                          </td>
+                          <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
+                            {fmtBRL(c.valor_atual)}
+                          </td>
+                          <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
+                            {fmtBRL(c.valor_investido)}
+                          </td>
+                          <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
+                            {fmtBRL(lucro)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* Atualização */}
+          <section style={{ marginTop: 22 }}>
+            <h2 style={{ marginBottom: 8 }}>Registrar atualização (snapshot)</h2>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: 10,
+                alignItems: "end",
+              }}
+            >
+              {(["BTC", "ETH", "LINK", "LTC", "UNI"] as Cripto[]).map((k) => (
+                <label key={k} style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#555" }}>{k} (valor atual)</span>
+                  <input
+                    value={form[k]}
+                    onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                    placeholder="ex.: 424,21"
+                    inputMode="decimal"
+                    style={{
+                      padding: 10,
+                      borderRadius: 10,
+                      border: "1px solid #ccc",
+                      outline: "none",
+                    }}
+                  />
+                </label>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                onClick={registrarAtualizacao}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #333",
+                  background: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                Registrar atualização
+              </button>
+
+              <button
+                onClick={preencherComCarteiraAtual}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                }}
+              >
+                Preencher com valores atuais
+              </button>
+
+              <button
+                onClick={verVencedora}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                }}
+              >
+                Ver vencedora (baseline ≥ 3 dias)
+              </button>
+
+              <button
+                onClick={carregarTudo}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                }}
+              >
+                Recarregar
+              </button>
+            </div>
+          </section>
+
+          {/* Resumo do período */}
+          <section style={{ marginTop: 22 }}>
+            <h2 style={{ marginBottom: 8 }}>Resumo do período (tipo E45)</h2>
+
+            {!resumo ? (
+              <div style={{ padding: 12, borderRadius: 10, border: "1px solid #ddd" }}>
+                <b>Sem resumo.</b>
+                <div style={{ marginTop: 6, color: "#555" }}>
+                  Você provavelmente ainda não criou um <b>cutoff</b> em <code>cripto.cutoffs</code>.
+                  <br />
+                  Crie um cutoff após o aporte (ponto de corte do período).
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: 12, borderRadius: 10, border: "1px solid #ddd" }}>
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div>
+                    <b>Saldo no corte:</b> {fmtBRL(resumo.saldo_cripto_no_corte)}
+                  </div>
+                  <div>
+                    <b>Total cripto atual:</b> {fmtBRL(resumo.total_cripto_atual)}
+                  </div>
+                  <div>
+                    <b>Total sacado desde o corte:</b> {fmtBRL(resumo.total_sacado_desde_corte)}
+                  </div>
+                  <div>
+                    <b>Lucro ajustado do período:</b> {fmtBRL(resumo.lucro_ajustado_periodo)}
+                  </div>
+                  <div>
+                    <b>Saques permitidos agora:</b> {resumo.saques_permitidos_agora}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <button
+                    onClick={sacarAutomatico}
+                    disabled={(resumo.saques_permitidos_agora ?? 0) <= 0}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: "1px solid #333",
+                      background: (resumo.saques_permitidos_agora ?? 0) > 0 ? "#fff" : "#f2f2f2",
+                      cursor: (resumo.saques_permitidos_agora ?? 0) > 0 ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    Sacar R$50 automaticamente
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </main>
   );
-} 
+}
