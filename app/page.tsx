@@ -17,6 +17,13 @@ type ResumoPeriodo = {
   saques_permitidos_agora: number;
 };
 
+type RendaFixa = {
+  id: number;
+  nome: string;
+  saldo: number;
+};
+
+
 type CarteiraCripto = {
   cripto: Cripto;
   valor_atual: number;
