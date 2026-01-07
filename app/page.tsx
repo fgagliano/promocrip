@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-type Cripto = "BTC" | "ETH" | "LINK" | "LTC" | "UNI";
+type Cripto = "BTC" | "ETH" | "LINK" | "LTC" | "UNI" | "MELI_DOLAR";
 
 type ResumoPeriodo = {
   cutoff_id: number;
@@ -22,13 +22,28 @@ type CarteiraCripto = {
   valor_investido: number;
 };
 
+const ORDEM: Cripto[] = ["BTC", "ETH", "LINK", "LTC", "UNI", "MELI_DOLAR"];
+
+const LABEL: Record<Cripto, string> = {
+  BTC: "BTC",
+  ETH: "ETH",
+  LINK: "LINK",
+  LTC: "LTC",
+  UNI: "UNI",
+  MELI_DOLAR: "Meli Dólar",
+};
+
 function fmtBRL(v: number | null | undefined) {
   const n = typeof v === "number" && Number.isFinite(v) ? v : 0;
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function fmtPct(v: number | null | undefined) {
+  if (v === null || v === undefined || !Number.isFinite(v)) return "—";
+  return `${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+}
+
 function parseMoney(s: string) {
-  // aceita "1234,56" ou "1.234,56" ou "1234.56"
   const cleaned = s
     .trim()
     .replace(/\./g, "")
@@ -59,6 +74,7 @@ export default function Page() {
     LINK: "",
     LTC: "",
     UNI: "",
+    MELI_DOLAR: "",
   });
 
   async function carregarTudo() {
@@ -72,21 +88,22 @@ export default function Page() {
     setErro("");
     setMsg("");
 
-    // carteira atual
     const { data: carteiraData, error: carteiraErr } = await supabase
       .schema("cripto")
       .from("carteira_cripto")
-      .select("cripto, valor_atual, valor_investido")
-      .order("cripto", { ascending: true });
+      .select("cripto, valor_atual, valor_investido");
 
     if (carteiraErr) {
       setErro(`Erro ao ler carteira_cripto: ${carteiraErr.message}`);
       setLoading(false);
       return;
     }
-    setCarteira((carteiraData ?? []) as CarteiraCripto[]);
 
-    // resumo do período
+    const lista = (carteiraData ?? []) as CarteiraCripto[];
+    // ordena na ordem desejada
+    lista.sort((a, b) => ORDEM.indexOf(a.cripto) - ORDEM.indexOf(b.cripto));
+    setCarteira(lista);
+
     const { data: resumoData, error: resumoErr } = await supabase
       .schema("cripto")
       .from("vw_resumo_periodo")
@@ -104,7 +121,6 @@ export default function Page() {
     }
 
     setResumo((resumoData ?? null) as ResumoPeriodo | null);
-
     setLoading(false);
   }
 
@@ -121,6 +137,7 @@ export default function Page() {
       LINK: map.get("LINK")?.toString() ?? "",
       LTC: map.get("LTC")?.toString() ?? "",
       UNI: map.get("UNI")?.toString() ?? "",
+      MELI_DOLAR: map.get("MELI_DOLAR")?.toString() ?? "",
     });
   }
 
@@ -135,9 +152,9 @@ export default function Page() {
       LINK: parseMoney(form.LINK),
       LTC: parseMoney(form.LTC),
       UNI: parseMoney(form.UNI),
+      MELI_DOLAR: parseMoney(form.MELI_DOLAR),
     };
 
-    // valida mínimo: pelo menos um > 0
     const soma = Object.values(valores).reduce((a, b) => a + b, 0);
     if (soma <= 0) {
       setErro("Preencha ao menos um valor (maior que zero).");
@@ -147,7 +164,7 @@ export default function Page() {
     const { data, error } = await supabase
       .schema("cripto")
       .rpc("fn_registrar_snapshot", {
-        valores, // jsonb
+        valores,
         obs: "Atualização manual via web",
       });
 
@@ -206,16 +223,6 @@ export default function Page() {
         Atualize saldos, acompanhe lucro ajustado (tipo sua E45) e execute saque automático.
       </p>
 
-      {!supabase && (
-        <div style={{ padding: 12, border: "1px solid #f00", borderRadius: 10 }}>
-          <b>Env vars não carregadas.</b>
-          <div>
-            Confere no Vercel se existem: NEXT_PUBLIC_SUPABASE_URL e
-            NEXT_PUBLIC_SUPABASE_ANON_KEY, e se já houve um redeploy depois de criar.
-          </div>
-        </div>
-      )}
-
       {loading ? (
         <p>Carregando…</p>
       ) : (
@@ -246,13 +253,13 @@ export default function Page() {
                   style={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    minWidth: 520,
+                    minWidth: 720,
                   }}
                 >
                   <thead>
                     <tr>
                       <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Cripto
+                        Ativo
                       </th>
                       <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
                         Atual (C)
@@ -261,26 +268,60 @@ export default function Page() {
                         Investido (D)
                       </th>
                       <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Lucro
+                        Lucro (R$)
+                      </th>
+                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
+                        Lucro (%)
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {carteira.map((c) => {
-                      const lucro = (c.valor_atual ?? 0) - (c.valor_investido ?? 0);
+                      const atual = c.valor_atual ?? 0;
+                      const inv = c.valor_investido ?? 0;
+
+                      const temInvestido = c.cripto !== "MELI_DOLAR" && inv > 0;
+                      const lucro = c.cripto === "MELI_DOLAR" ? null : atual - inv;
+                      const pct = temInvestido ? ((atual - inv) / inv) * 100 : null;
+
+                      const negativo = (lucro ?? 0) < 0 || (pct ?? 0) < 0;
+
                       return (
                         <tr key={c.cripto}>
                           <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                            <b>{c.cripto}</b>
+                            <b>{LABEL[c.cripto]}</b>
                           </td>
+
                           <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
-                            {fmtBRL(c.valor_atual)}
+                            {fmtBRL(atual)}
                           </td>
+
                           <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
-                            {fmtBRL(c.valor_investido)}
+                            {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(inv)}
                           </td>
-                          <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
-                            {fmtBRL(lucro)}
+
+                          <td
+                            style={{
+                              padding: 8,
+                              textAlign: "right",
+                              borderBottom: "1px solid #eee",
+                              color: negativo ? "#b42318" : undefined,
+                              fontWeight: negativo ? 700 : undefined,
+                            }}
+                          >
+                            {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(lucro ?? 0)}
+                          </td>
+
+                          <td
+                            style={{
+                              padding: 8,
+                              textAlign: "right",
+                              borderBottom: "1px solid #eee",
+                              color: (pct ?? 0) < 0 ? "#b42318" : undefined,
+                              fontWeight: (pct ?? 0) < 0 ? 700 : undefined,
+                            }}
+                          >
+                            {c.cripto === "MELI_DOLAR" ? "—" : fmtPct(pct)}
                           </td>
                         </tr>
                       );
@@ -298,14 +339,14 @@ export default function Page() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
                 gap: 10,
                 alignItems: "end",
               }}
             >
-              {(["BTC", "ETH", "LINK", "LTC", "UNI"] as Cripto[]).map((k) => (
+              {ORDEM.map((k) => (
                 <label key={k} style={{ display: "grid", gap: 6 }}>
-                  <span style={{ fontSize: 13, color: "#555" }}>{k} (valor atual)</span>
+                  <span style={{ fontSize: 13, color: "#555" }}>{LABEL[k]} (valor atual)</span>
                   <input
                     value={form[k]}
                     onChange={(e) => setForm({ ...form, [k]: e.target.value })}
@@ -397,7 +438,7 @@ export default function Page() {
                     <b>Saldo no corte:</b> {fmtBRL(resumo.saldo_cripto_no_corte)}
                   </div>
                   <div>
-                    <b>Total cripto atual:</b> {fmtBRL(resumo.total_cripto_atual)}
+                    <b>Total cripto atual (inclui Meli Dólar):</b> {fmtBRL(resumo.total_cripto_atual)}
                   </div>
                   <div>
                     <b>Total sacado desde o corte:</b> {fmtBRL(resumo.total_sacado_desde_corte)}
@@ -432,4 +473,4 @@ export default function Page() {
       )}
     </main>
   );
-} 
+}
