@@ -378,18 +378,7 @@ export default function Page() {
                 Registrar atualização
               </button>
 
-              <button
-                onClick={preencherComCarteiraAtual}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                  cursor: "pointer",
-                }}
-              >
-                Preencher com valores atuais
-              </button>
+              
 
               <button
                 onClick={verVencedora}
