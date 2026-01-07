@@ -200,7 +200,7 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
 
 useEffect(() => {
   if (carteira.length === 0) return;
-  preencherFormComCarteiraAtual();
+  preencherComCarteiraAtual();
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [carteira]);
 
