@@ -182,7 +182,21 @@ if (rfErr) {
 
 setRendaFixa((rfData ?? []) as RendaFixa[]);
 
-    
+    const { data: aportesData, error: aportesErr } = await supabase
+  .schema("cripto")
+  .from("aportes")
+  .select("id, data_aporte, valor, saldo_base, observacao")
+  .order("data_aporte", { ascending: false })
+  .order("id", { ascending: false });
+
+if (aportesErr) {
+  setErro(`Erro ao ler aportes: ${aportesErr.message}`);
+  setLoading(false);
+  return;
+}
+
+setAportes((aportesData ?? []) as Aporte[]);
+
     const { data: resumoData, error: resumoErr } = await supabase
       .schema("cripto")
       .from("vw_resumo_periodo")
