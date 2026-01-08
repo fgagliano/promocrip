@@ -138,6 +138,7 @@ export default function Page() {
   });
 
 const [rendaFixa, setRendaFixa] = useState<RendaFixa[]>([]);
+const [aportes, setAportes] = useState<Aporte[]>([]);
 
   
   async function carregarTudo() {
