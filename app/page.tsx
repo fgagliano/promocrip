@@ -788,7 +788,7 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                     <div
                       className={[
                         "font-semibold",
-                        ganhoNegExibido ? "text-red-300" : "text-emerald-200",
+                        ganhoExibido ? "text-red-300" : "text-emerald-200",
                       ].join(" ")}
                     >
                       {fmtBRL(ganhoExibido ?? 0)}
@@ -861,7 +861,7 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                     <td
                       className={[
                         "py-3 px-4 text-right font-semibold",
-                        ganhoNegExibido ? "text-red-300" : "text-emerald-200",
+                        ganhoExibido ? "text-red-300" : "text-emerald-200",
                       ].join(" ")}
                     >
                       {fmtBRL(ganhoExibido ?? 0)}
