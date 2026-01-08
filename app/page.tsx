@@ -205,7 +205,7 @@ if (aportesErr) {
 }
 
 
-setAportes((aportesData ?? []) as Aporte[]);
+
 
     const { data: resumoData, error: resumoErr } = await supabase
       .schema("cripto")
