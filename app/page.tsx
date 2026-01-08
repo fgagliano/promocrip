@@ -712,62 +712,175 @@ const valor = parseMoney(novoValor);
               </div>
             </section>
 
-            {/* Histórico de aportes */}
-            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5">
-              <div className="border-b border-white/10 px-5 py-4">
-                <h2 className="text-base font-semibold">Histórico de aportes</h2>
-                <p className="mt-1 text-xs text-slate-300">
-                  Mais recente em cima (último aporte primeiro).
-                </p>
-              </div>
+            {/* Histórico de aportes (estilo Excel) */}
+<section className="mt-6 rounded-2xl border border-white/10 bg-white/5">
+  <div className="border-b border-white/10 px-5 py-4">
+    <h2 className="text-base font-semibold">Histórico de aportes</h2>
+    <p className="mt-1 text-xs text-slate-300">
+      Mais recente em cima (linha corrente = a primeira).
+    </p>
+  </div>
 
-              <div className="px-5 py-4">
-                {aportes.length === 0 ? (
-                  <p className="text-sm text-slate-300">Nenhum aporte cadastrado ainda.</p>
-                ) : (
-                  <div className="grid gap-3">
-                    {aportes.map((a) => (
-                      <div
-                        key={a.id}
-                        className="rounded-2xl border border-white/10 bg-slate-950/30 p-4"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-sm font-semibold">
-                            {new Date(a.data_aporte).toLocaleDateString("pt-BR")}
-                          </div>
-                          <div className="text-xs text-slate-400">#{a.id}</div>
-                        </div>
+  <div className="px-5 py-4">
+    {aportes.length === 0 ? (
+      <p className="text-sm text-slate-300">Nenhum aporte cadastrado ainda.</p>
+    ) : (
+      <>
+        {/* Mobile: cards | Desktop: tabela */}
+        <div className="grid gap-3 sm:hidden">
+          {aportes.map((a, idx) => {
+            const ganhoNeg = (a.ganho_periodo ?? 0) < 0;
 
-                        <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                          <div>
-                            <div className="text-xs text-slate-400">Aporte</div>
-                            <div className="text-sm font-semibold text-sky-200">
-                              {fmtBRL(a.valor_aporte)}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-xs text-slate-400">
-                              Saldo base após o aporte
-                            </div>
-                            <div className="text-sm font-semibold">
-                              {a.saldo_anterior === null ? "—" : fmtBRL(a.saldo_anterior)}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-xs text-slate-400">Obs</div>
-                            <div className="text-sm font-semibold text-slate-200">
-                              {a.observacao ?? "—"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+            return (
+              <div
+                key={a.id}
+                className={[
+                  "rounded-2xl border p-4",
+                  idx === 0
+                    ? "border-sky-500/40 bg-sky-500/5"
+                    : "border-white/10 bg-slate-950/30",
+                ].join(" ")}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold">
+                    {new Date(`${a.data_aporte}T00:00:00`).toLocaleDateString("pt-BR")}
                   </div>
-                )}
+
+                  <div className="flex items-center gap-2">
+                    {idx === 0 && (
+                      <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-200 ring-1 ring-sky-500/30">
+                        Corrente
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400">#{a.id}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs text-slate-400">Saldo anterior</div>
+                    <div className="font-semibold">{fmtBRL(a.saldo_anterior)}</div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-xs text-slate-400">Aplic (aporte)</div>
+                    <div className="font-semibold text-sky-200">{fmtBRL(a.valor_aporte)}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-slate-400">Saldo atual</div>
+                    <div className="font-semibold">{fmtBRL(a.saldo_atual)}</div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-xs text-slate-400">Ganho / perda</div>
+                    <div
+                      className={[
+                        "font-semibold",
+                        ganhoNeg ? "text-red-300" : "text-emerald-200",
+                      ].join(" ")}
+                    >
+                      {fmtBRL(a.ganho_periodo)}
+                    </div>
+                    <div
+                      className={[
+                        "mt-0.5 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1",
+                        ganhoNeg
+                          ? "bg-red-500/10 text-red-200 ring-red-500/20"
+                          : "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
+                      ].join(" ")}
+                    >
+                      {fmtPct(a.pct_periodo)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 text-xs text-slate-400">
+                  Obs: <span className="text-slate-200">{a.observacao ?? "—"}</span>
+                </div>
               </div>
-            </section>
+            );
+          })}
+        </div>
+
+        {/* Desktop/tablet: tabela estilo Excel */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="min-w-[980px] w-full text-sm">
+            <thead className="text-xs text-slate-300">
+              <tr className="border-b border-white/10">
+                <th className="py-3 pr-4 text-left font-medium">Data</th>
+                <th className="py-3 px-4 text-right font-medium">Saldo anterior</th>
+                <th className="py-3 px-4 text-right font-medium">Aplic</th>
+                <th className="py-3 px-4 text-right font-medium">Saldo atual</th>
+                <th className="py-3 px-4 text-right font-medium">Ganho / perda</th>
+                <th className="py-3 px-4 text-right font-medium">Luc/Prej (%)</th>
+                <th className="py-3 pl-4 text-left font-medium">Obs</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-white/5">
+              {aportes.map((a, idx) => {
+                const ganhoNeg = (a.ganho_periodo ?? 0) < 0;
+
+                return (
+                  <tr
+                    key={a.id}
+                    className={[
+                      "hover:bg-white/5",
+                      idx === 0 ? "bg-sky-500/5" : "",
+                    ].join(" ")}
+                  >
+                    <td className="py-3 pr-4">
+                      <div className="font-semibold">
+                        {new Date(`${a.data_aporte}T00:00:00`).toLocaleDateString("pt-BR")}
+                      </div>
+                      {idx === 0 && (
+                        <div className="mt-0.5 text-xs text-sky-200">Linha corrente</div>
+                      )}
+                    </td>
+
+                    <td className="py-3 px-4 text-right">{fmtBRL(a.saldo_anterior)}</td>
+                    <td className="py-3 px-4 text-right text-sky-200 font-semibold">
+                      {fmtBRL(a.valor_aporte)}
+                    </td>
+                    <td className="py-3 px-4 text-right">{fmtBRL(a.saldo_atual)}</td>
+
+                    <td
+                      className={[
+                        "py-3 px-4 text-right font-semibold",
+                        ganhoNeg ? "text-red-300" : "text-emerald-200",
+                      ].join(" ")}
+                    >
+                      {fmtBRL(a.ganho_periodo)}
+                    </td>
+
+                    <td className="py-3 px-4 text-right">
+                      <span
+                        className={[
+                          "inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1",
+                          ganhoNeg
+                            ? "bg-red-500/10 text-red-200 ring-red-500/20"
+                            : "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
+                        ].join(" ")}
+                      >
+                        {fmtPct(a.pct_periodo)}
+                      </span>
+                    </td>
+
+                    <td className="py-3 pl-4 text-slate-200">
+                      {a.observacao ?? "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+  </div>
+</section>
+
 
             
             <div className="mt-8 text-xs text-slate-500">
