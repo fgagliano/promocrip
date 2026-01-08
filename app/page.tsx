@@ -712,7 +712,7 @@ const valor = parseMoney(novoValor);
               </div>
             </section>
 
-            {/* Histórico de aportes (estilo Excel) */}
+{/* Histórico de aportes (estilo Excel) */}
 <section className="mt-6 rounded-2xl border border-white/10 bg-white/5">
   <div className="border-b border-white/10 px-5 py-4">
     <h2 className="text-base font-semibold">Histórico de aportes</h2>
@@ -726,32 +726,34 @@ const valor = parseMoney(novoValor);
       <p className="text-sm text-slate-300">Nenhum aporte cadastrado ainda.</p>
     ) : (
       <>
-        {/* Mobile: cards | Desktop: tabela */}
+        {/* Mobile: cards */}
         <div className="grid gap-3 sm:hidden">
           {aportes.map((a, idx) => {
-            const ganho = a.ganho_periodo ?? 0;
-const ganhoNeg = ganho < 0;
+            const isCorrente =
+              idx === 0 &&
+              resumo?.total_cripto_atual !== undefined &&
+              resumo?.total_cripto_atual !== null;
 
-const isCorrente = idx === 0 && resumo?.total_cripto_atual !== undefined && resumo?.total_cripto_atual !== null;
+            // Base do período (igual ao Excel: saldo anterior + aporte) — se preferir usar saldo_atual, troque aqui
+            const base = (a.saldo_anterior ?? 0) + (a.valor_aporte ?? 0);
 
-const base = a.saldo_atual ?? (a.saldo_anterior + a.valor_aporte);
-const saldoCarteiraAgora = isCorrente ? (resumo!.total_cripto_atual ?? 0) : null;
+            const saldoCarteiraAgora = isCorrente ? (resumo!.total_cripto_atual ?? 0) : null;
 
-const ganhoExibido = isCorrente ? (saldoCarteiraAgora! - base) : a.ganho_periodo;
-const pctExibido = isCorrente
-  ? (base > 0 ? (ganhoExibido! / base) : null)
-  : a.pct_periodo;
+            // Linha corrente recalcula com o saldo atual da carteira; histórico usa valor salvo
+            const ganhoExibido = isCorrente ? (saldoCarteiraAgora! - base) : (a.ganho_periodo ?? 0);
 
-const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
+            // pct_periodo pode vir como 0.0263 (fração) ou 2.63 (percentual). fmtPct já trata.
+            // Para corrente, calculamos como fração para o fmtPct converter certinho.
+            const pctExibido = isCorrente ? (base > 0 ? (ganhoExibido / base) : null) : a.pct_periodo;
+
+            const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
 
             return (
               <div
                 key={a.id}
                 className={[
                   "rounded-2xl border p-4",
-                  idx === 0
-                    ? "border-sky-500/40 bg-sky-500/5"
-                    : "border-white/10 bg-slate-950/30",
+                  idx === 0 ? "border-sky-500/40 bg-sky-500/5" : "border-white/10 bg-slate-950/30",
                 ].join(" ")}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -790,22 +792,21 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                     <div
                       className={[
                         "font-semibold",
-                        ganhoExibido ? "text-red-300" : "text-emerald-200",
+                        ganhoNegExibido ? "text-red-300" : "text-emerald-200",
                       ].join(" ")}
                     >
                       {fmtBRL(ganhoExibido ?? 0)}
-
                     </div>
+
                     <div
                       className={[
                         "mt-0.5 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1",
-                        ganhoNeg
+                        ganhoNegExibido
                           ? "bg-red-500/10 text-red-200 ring-red-500/20"
                           : "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
                       ].join(" ")}
                     >
                       {fmtPct(pctExibido)}
-
                     </div>
                   </div>
                 </div>
@@ -835,7 +836,20 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
 
             <tbody className="divide-y divide-white/5">
               {aportes.map((a, idx) => {
-                const ganhoNeg = (a.ganho_periodo ?? 0) < 0;
+                const isCorrente =
+                  idx === 0 &&
+                  resumo?.total_cripto_atual !== undefined &&
+                  resumo?.total_cripto_atual !== null;
+
+                // Base do período (igual ao Excel: saldo anterior + aporte)
+                const base = (a.saldo_anterior ?? 0) + (a.valor_aporte ?? 0);
+
+                const saldoCarteiraAgora = isCorrente ? (resumo!.total_cripto_atual ?? 0) : null;
+
+                const ganhoExibido = isCorrente ? (saldoCarteiraAgora! - base) : (a.ganho_periodo ?? 0);
+                const pctExibido = isCorrente ? (base > 0 ? (ganhoExibido / base) : null) : a.pct_periodo;
+
+                const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
 
                 return (
                   <tr
@@ -855,32 +869,32 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                     </td>
 
                     <td className="py-3 px-4 text-right">{fmtBRL(a.saldo_anterior)}</td>
+
                     <td className="py-3 px-4 text-right text-sky-200 font-semibold">
                       {fmtBRL(a.valor_aporte)}
                     </td>
+
                     <td className="py-3 px-4 text-right">{fmtBRL(a.saldo_atual)}</td>
 
                     <td
                       className={[
                         "py-3 px-4 text-right font-semibold",
-                        ganhoExibido ? "text-red-300" : "text-emerald-200",
+                        ganhoNegExibido ? "text-red-300" : "text-emerald-200",
                       ].join(" ")}
                     >
                       {fmtBRL(ganhoExibido ?? 0)}
-
                     </td>
 
                     <td className="py-3 px-4 text-right">
                       <span
                         className={[
                           "inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1",
-                          ganhoNeg
+                          ganhoNegExibido
                             ? "bg-red-500/10 text-red-200 ring-red-500/20"
                             : "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
                         ].join(" ")}
                       >
                         {fmtPct(pctExibido)}
-
                       </span>
                     </td>
 
@@ -897,6 +911,7 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
     )}
   </div>
 </section>
+
 
 
             
