@@ -17,6 +17,15 @@ type ResumoPeriodo = {
   saques_permitidos_agora: number;
 };
 
+type Aporte = {
+  id: number;
+  data_aporte: string;
+  valor: number;
+  saldo_base: number | null;
+  observacao: string | null;
+};
+
+
 type RendaFixa = {
   id: number;
   nome: string;
