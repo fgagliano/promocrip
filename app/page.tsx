@@ -729,7 +729,9 @@ const valor = parseMoney(novoValor);
         {/* Mobile: cards | Desktop: tabela */}
         <div className="grid gap-3 sm:hidden">
           {aportes.map((a, idx) => {
-            const ganhoNeg = (a.ganho_periodo ?? 0) < 0;
+            const ganho = a.ganho_periodo ?? 0;
+const ganhoNeg = ganho < 0;
+
 const isCorrente = idx === 0 && resumo?.total_cripto_atual !== undefined && resumo?.total_cripto_atual !== null;
 
 const base = a.saldo_atual ?? (a.saldo_anterior + a.valor_aporte);
