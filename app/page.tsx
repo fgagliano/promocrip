@@ -802,7 +802,8 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                           : "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
                       ].join(" ")}
                     >
-                      {fmtPct(a.pct_periodo)}
+                      {fmtPct(pctExibido)}
+
                     </div>
                   </div>
                 </div>
@@ -876,7 +877,8 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                             : "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
                         ].join(" ")}
                       >
-                        {fmtPct(a.pct_periodo)}
+                        {fmtPct(pctExibido)}
+
                       </span>
                     </td>
 
