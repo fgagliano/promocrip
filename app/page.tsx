@@ -728,7 +728,7 @@ const valor = parseMoney(novoValor);
                           <div>
                             <div className="text-xs text-slate-400">Aporte</div>
                             <div className="text-sm font-semibold text-sky-200">
-                              {fmtBRL(a.valor)}
+                              {fmtBRL(a.valor_aporte)}
                             </div>
                           </div>
 
