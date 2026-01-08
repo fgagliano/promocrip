@@ -737,7 +737,7 @@ const valor = parseMoney(novoValor);
                               Saldo base após o aporte
                             </div>
                             <div className="text-sm font-semibold">
-                              {a.saldo_base === null ? "—" : fmtBRL(a.saldo_base)}
+                              {a.saldo_anterior === null ? "—" : fmtBRL(a.saldo_anterior)}
                             </div>
                           </div>
 
