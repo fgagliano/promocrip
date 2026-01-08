@@ -694,6 +694,64 @@ const valor = parseMoney(novoValor);
               </div>
             </section>
 
+            {/* Histórico de aportes */}
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5">
+              <div className="border-b border-white/10 px-5 py-4">
+                <h2 className="text-base font-semibold">Histórico de aportes</h2>
+                <p className="mt-1 text-xs text-slate-300">
+                  Mais recente em cima (último aporte primeiro).
+                </p>
+              </div>
+
+              <div className="px-5 py-4">
+                {aportes.length === 0 ? (
+                  <p className="text-sm text-slate-300">Nenhum aporte cadastrado ainda.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {aportes.map((a) => (
+                      <div
+                        key={a.id}
+                        className="rounded-2xl border border-white/10 bg-slate-950/30 p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-sm font-semibold">
+                            {new Date(a.data_aporte).toLocaleDateString("pt-BR")}
+                          </div>
+                          <div className="text-xs text-slate-400">#{a.id}</div>
+                        </div>
+
+                        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                          <div>
+                            <div className="text-xs text-slate-400">Aporte</div>
+                            <div className="text-sm font-semibold text-sky-200">
+                              {fmtBRL(a.valor)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-slate-400">
+                              Saldo base após o aporte
+                            </div>
+                            <div className="text-sm font-semibold">
+                              {a.saldo_base === null ? "—" : fmtBRL(a.saldo_base)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-slate-400">Obs</div>
+                            <div className="text-sm font-semibold text-slate-200">
+                              {a.observacao ?? "—"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            
             <div className="mt-8 text-xs text-slate-500">
               Dica: você pode digitar valores com ponto ou vírgula (ex.: <b>60.88</b> ou <b>60,88</b>).
             </div>
