@@ -185,7 +185,7 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
     const { data: aportesData, error: aportesErr } = await supabase
   .schema("cripto")
   .from("aportes")
-  .select("id, data_aporte, valor, saldo_base, observacao")
+  .select("id, data_aporte, saldo_anterior, valor_aporte, saldo_atual, ganho_periodo, pct_periodo, observacao")
   .order("data_aporte", { ascending: false })
   .order("id", { ascending: false });
 
