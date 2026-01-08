@@ -483,13 +483,16 @@ const valor = parseMoney(novoValor);
 
                               <td
                                 className={[
-                                  "px-5 py-3 text-right font-semibold",
-                                  c.cripto === "MELI_DOLAR"
-                                    ? "text-slate-400 font-normal"
-                                    : lucroNeg
-                                    ? "text-red-300"
-                                    : "text-emerald-200",
-                                ].join(" ")}
+  "px-5 py-3 text-right font-semibold",
+  c.cripto === "MELI_DOLAR"
+    ? "text-slate-400 font-normal"
+    : pct === null
+    ? "text-slate-400 font-normal"
+    : pctNeg
+    ? "text-red-300"
+    : "text-emerald-200",
+].join(" ")}
+
                               >
                                 {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(lucro ?? 0)}
                               </td>
