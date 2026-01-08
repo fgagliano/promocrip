@@ -186,7 +186,7 @@ if (rfErr) {
 
 setRendaFixa((rfData ?? []) as RendaFixa[]);
 
-    const { data: aportesData, error: aportesErr } = await supabase
+ const { data: aportesData, error: aportesErr } = await supabase
   .schema("cripto")
   .from("aportes")
   .select("id, data_aporte, saldo_anterior, valor_aporte, saldo_atual, ganho_periodo, pct_periodo, observacao")
@@ -194,10 +194,16 @@ setRendaFixa((rfData ?? []) as RendaFixa[]);
   .order("id", { ascending: false });
 
 if (aportesErr) {
-  setErro(`Erro ao ler aportes: ${aportesErr.message}`);
-  setLoading(false);
-  return;
+  // não derruba o resto do carregamento
+  setAportes([]);
+  setErro((prev) => {
+    const msg = `Erro ao ler aportes: ${aportesErr.message}`;
+    return prev ? `${prev} | ${msg}` : msg;
+  });
+} else {
+  setAportes((aportesData ?? []) as Aporte[]);
 }
+
 
 setAportes((aportesData ?? []) as Aporte[]);
 
