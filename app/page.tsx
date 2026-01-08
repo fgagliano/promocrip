@@ -849,8 +849,13 @@ const ganhoExibido = isCorrente
                 const base = (a.saldo_anterior ?? 0) + (a.valor_aporte ?? 0);
 
                 const saldoCarteiraAgora = isCorrente ? (resumo!.total_cripto_atual ?? 0) : null;
+const sacadoDesdeCorte = isCorrente ? (resumo!.total_sacado_desde_corte ?? 0) : 0;
 
-                const ganhoExibido = isCorrente ? (saldoCarteiraAgora! - base) : (a.ganho_periodo ?? 0);
+// E45: (total atual + sacado) - base
+const ganhoExibido = isCorrente
+  ? ((saldoCarteiraAgora ?? 0) + sacadoDesdeCorte - base)
+  : (a.ganho_periodo ?? 0);
+
                 const pctExibido = isCorrente ? (base > 0 ? (ganhoExibido / base) : null) : a.pct_periodo;
 
                 const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
