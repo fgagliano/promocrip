@@ -316,293 +316,361 @@ const valor = parseMoney(novoValor);
   await carregarTudo();
 }
 
-  return (
-    <main style={{ padding: 20, fontFamily: "system-ui, Arial" }}>
-      <h1 style={{ margin: 0 }}>PromoCrip</h1>
-      <p style={{ marginTop: 6, color: "#555" }}>
-        Atualize saldos, acompanhe lucro ajustado (tipo sua E45) e execute saque automático.
-      </p>
+    return (
+    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-100">
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">PromoCrip</h1>
+            <p className="mt-1 text-sm text-slate-300">
+              Atualize saldos, acompanhe lucro ajustado (tipo sua E45) e execute saque automático.
+            </p>
+          </div>
 
-      {loading ? (
-        <p>Carregando…</p>
-      ) : (
-        <>
-          {(erro || msg) && (
-            <div
-              style={{
-                marginTop: 12,
-                padding: 12,
-                borderRadius: 10,
-                border: `1px solid ${erro ? "#ff4d4f" : "#52c41a"}`,
-                background: erro ? "#fff1f0" : "#f6ffed",
-              }}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={carregarTudo}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-white/10"
             >
-              {erro ? <b style={{ color: "#a8071a" }}>{erro}</b> : <b>{msg}</b>}
-            </div>
-          )}
+              Recarregar
+            </button>
 
-          {/* Carteira */}
-          <section style={{ marginTop: 18 }}>
-            <h2 style={{ marginBottom: 8 }}>Carteira (estado atual)</h2>
-
-            {carteira.length === 0 ? (
-              <p>Nenhuma linha em carteira_cripto ainda.</p>
-            ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    minWidth: 720,
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Ativo
-                      </th>
-                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Atual (C)
-                      </th>
-                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Investido (D)
-                      </th>
-                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Lucro (R$)
-                      </th>
-                      <th style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #ddd" }}>
-                        Lucro (%)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {carteira.map((c) => {
-                      const atual = c.valor_atual ?? 0;
-                      const inv = c.valor_investido ?? 0;
-
-                      const temInvestido = c.cripto !== "MELI_DOLAR" && inv > 0;
-                      const lucro = c.cripto === "MELI_DOLAR" ? null : atual - inv;
-                      const pct = temInvestido ? ((atual - inv) / inv) * 100 : null;
-
-                      const negativo = (lucro ?? 0) < 0 || (pct ?? 0) < 0;
-
-                      return (
-                        <tr key={c.cripto}>
-                          <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                            <b>{LABEL[c.cripto]}</b>
-                          </td>
-
-                          <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
-                            {fmtBRL(atual)}
-                          </td>
-
-                          <td style={{ padding: 8, textAlign: "right", borderBottom: "1px solid #eee" }}>
-                            {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(inv)}
-                          </td>
-
-                          <td
-                            style={{
-                              padding: 8,
-                              textAlign: "right",
-                              borderBottom: "1px solid #eee",
-                              color: negativo ? "#b42318" : undefined,
-                              fontWeight: negativo ? 700 : undefined,
-                            }}
-                          >
-                            {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(lucro ?? 0)}
-                          </td>
-
-                          <td
-                            style={{
-                              padding: 8,
-                              textAlign: "right",
-                              borderBottom: "1px solid #eee",
-                              color: (pct ?? 0) < 0 ? "#b42318" : undefined,
-                              fontWeight: (pct ?? 0) < 0 ? 700 : undefined,
-                            }}
-                          >
-                            {c.cripto === "MELI_DOLAR" ? "—" : fmtPct(pct)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-<section style={{ marginTop: 22 }}>
-  <h2 style={{ marginBottom: 8 }}>Renda Fixa</h2>
-
-  {rendaFixa.length === 0 ? (
-    <p>Nenhuma renda fixa cadastrada.</p>
-  ) : (
-    <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-      {rendaFixa.map((rf) => (
-        <div
-          key={rf.id}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 160px",
-            gap: 10,
-            alignItems: "center",
-          }}
-        >
-          <span>
-            <b>{rf.nome}</b>
-          </span>
-
-          <input
-            defaultValue={fmtBRL(rf.saldo).replace("R$", "").trim()}
-            inputMode="decimal"
-            onBlur={(e) => atualizarRendaFixa(rf.id, e.target.value)}
-            style={{
-              padding: 8,
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              textAlign: "right",
-            }}
-          />
+            <button
+              onClick={verVencedora}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-white/10"
+            >
+              Ver vencedora
+            </button>
+          </div>
         </div>
-      ))}
-    </div>
-  )}
-</section>
 
-          
-          {/* Atualização */}
-          <section style={{ marginTop: 22 }}>
-            <h2 style={{ marginBottom: 8 }}>Registrar atualização (snapshot)</h2>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                gap: 10,
-                alignItems: "end",
-              }}
-            >
-              {ORDEM.map((k) => (
-                <label key={k} style={{ display: "grid", gap: 6 }}>
-                  <span style={{ fontSize: 13, color: "#555" }}>{LABEL[k]} (valor atual)</span>
-                  <input
-                    value={form[k]}
-                    onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-                    placeholder="ex.: 424,21"
-                    inputMode="decimal"
-                    style={{
-                      padding: 10,
-                      borderRadius: 10,
-                      border: "1px solid #ccc",
-                      outline: "none",
-                    }}
-                  />
-                </label>
-              ))}
+        {/* Alerts */}
+        <div className="mt-5">
+          {loading ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              Carregando…
             </div>
-
-            <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button
-                onClick={registrarAtualizacao}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #333",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
+          ) : (
+            (erro || msg) && (
+              <div
+                className={[
+                  "rounded-2xl border p-4 text-sm",
+                  erro
+                    ? "border-red-500/30 bg-red-500/10 text-red-100"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-50",
+                ].join(" ")}
               >
-                Registrar atualização
-              </button>
+                <span className="font-semibold">{erro ? erro : msg}</span>
+              </div>
+            )
+          )}
+        </div>
 
-              
+        {!loading && (
+          <>
+            {/* KPI Row */}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-300">Total cripto atual</div>
+                <div className="mt-1 text-lg font-semibold">
+                  {fmtBRL(resumo?.total_cripto_atual ?? 0)}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">Inclui Meli Dólar</div>
+              </div>
 
-              <button
-                onClick={verVencedora}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                  cursor: "pointer",
-                }}
-              >
-                Ver vencedora (baseline ≥ 3 dias)
-              </button>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-300">Lucro ajustado (período)</div>
+                <div className="mt-1 text-lg font-semibold">
+                  {fmtBRL(resumo?.lucro_ajustado_periodo ?? 0)}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">Tipo célula E45</div>
+              </div>
 
-              <button
-                onClick={carregarTudo}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                  cursor: "pointer",
-                }}
-              >
-                Recarregar
-              </button>
-            </div>
-          </section>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-300">Total sacado</div>
+                <div className="mt-1 text-lg font-semibold">
+                  {fmtBRL(resumo?.total_sacado_desde_corte ?? 0)}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">Desde o corte</div>
+              </div>
 
-          {/* Resumo do período */}
-          <section style={{ marginTop: 22 }}>
-            <h2 style={{ marginBottom: 8 }}>Resumo do período (tipo E45)</h2>
-
-            {!resumo ? (
-              <div style={{ padding: 12, borderRadius: 10, border: "1px solid #ddd" }}>
-                <b>Sem resumo.</b>
-                <div style={{ marginTop: 6, color: "#555" }}>
-                  Você provavelmente ainda não criou um <b>cutoff</b> em <code>cripto.cutoffs</code>.
-                  <br />
-                  Crie um cutoff após o aporte (ponto de corte do período).
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-300">Saques permitidos agora</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="text-lg font-semibold">
+                    {resumo?.saques_permitidos_agora ?? 0}
+                  </span>
+                  <span
+                    className={[
+                      "rounded-full px-2 py-0.5 text-xs font-medium",
+                      (resumo?.saques_permitidos_agora ?? 0) > 0
+                        ? "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30"
+                        : "bg-white/10 text-slate-200 ring-1 ring-white/10",
+                    ].join(" ")}
+                  >
+                    {(resumo?.saques_permitidos_agora ?? 0) > 0 ? "Liberado" : "Aguardando"}
+                  </span>
+                </div>
+                <div className="mt-1 text-xs text-slate-400">
+                  Corte:{" "}
+                  {resumo?.cutoff_criado_em
+                    ? new Date(resumo.cutoff_criado_em).toLocaleDateString("pt-BR")
+                    : "—"}
                 </div>
               </div>
-            ) : (
-              <div style={{ padding: 12, borderRadius: 10, border: "1px solid #ddd" }}>
-                <div style={{ display: "grid", gap: 8 }}>
+            </div>
+
+            {/* Grid principal */}
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+              {/* Carteira */}
+              <section className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5">
+                <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
                   <div>
-    <b>Data do corte:</b>{" "}
-    {new Date(resumo.cutoff_criado_em).toLocaleString("pt-BR")}
-  </div>
-                  <div>
-                    <b>Saldo no corte:</b> {fmtBRL(resumo.saldo_cripto_no_corte)}
-                  </div>
-                  <div>
-                    <b>Total cripto atual (inclui Meli Dólar):</b> {fmtBRL(resumo.total_cripto_atual)}
-                  </div>
-                  <div>
-                    <b>Total sacado desde o corte:</b> {fmtBRL(resumo.total_sacado_desde_corte)}
-                  </div>
-                  <div>
-                    <b>Lucro ajustado do período:</b> {fmtBRL(resumo.lucro_ajustado_periodo)}
-                  </div>
-                  <div>
-                    <b>Saques permitidos agora:</b> {resumo.saques_permitidos_agora}
+                    <h2 className="text-base font-semibold">Carteira (estado atual)</h2>
+                    <p className="mt-1 text-xs text-slate-300">
+                      Atual (C), Investido (D), lucro e %.
+                    </p>
                   </div>
                 </div>
 
-                <div style={{ marginTop: 12 }}>
+                {carteira.length === 0 ? (
+                  <div className="px-5 py-6 text-sm text-slate-300">
+                    Nenhuma linha em <span className="font-medium">carteira_cripto</span> ainda.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[820px] w-full text-sm">
+                      <thead className="text-xs text-slate-300">
+                        <tr className="border-b border-white/10">
+                          <th className="px-5 py-3 text-left font-medium">Ativo</th>
+                          <th className="px-5 py-3 text-right font-medium">Atual (C)</th>
+                          <th className="px-5 py-3 text-right font-medium">Investido (D)</th>
+                          <th className="px-5 py-3 text-right font-medium">Lucro (R$)</th>
+                          <th className="px-5 py-3 text-right font-medium">Lucro (%)</th>
+                        </tr>
+                      </thead>
+
+                      <tbody className="divide-y divide-white/5">
+                        {carteira.map((c) => {
+                          const atual = c.valor_atual ?? 0;
+                          const inv = c.valor_investido ?? 0;
+
+                          const temInvestido = c.cripto !== "MELI_DOLAR" && inv > 0;
+                          const lucro = c.cripto === "MELI_DOLAR" ? null : atual - inv;
+                          const pct = temInvestido ? ((atual - inv) / inv) * 100 : null;
+
+                          const lucroNeg = (lucro ?? 0) < 0;
+                          const pctNeg = (pct ?? 0) < 0;
+
+                          return (
+                            <tr key={c.cripto} className="hover:bg-white/5">
+                              <td className="px-5 py-3">
+                                <div className="font-semibold">{LABEL[c.cripto]}</div>
+                                {c.cripto === "MELI_DOLAR" && (
+                                  <div className="mt-0.5 text-xs text-slate-400">
+                                    Só “Atual”; não compra.
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="px-5 py-3 text-right">{fmtBRL(atual)}</td>
+
+                              <td className="px-5 py-3 text-right text-slate-200">
+                                {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(inv)}
+                              </td>
+
+                              <td
+                                className={[
+                                  "px-5 py-3 text-right font-semibold",
+                                  c.cripto === "MELI_DOLAR"
+                                    ? "text-slate-400 font-normal"
+                                    : lucroNeg
+                                    ? "text-red-300"
+                                    : "text-emerald-200",
+                                ].join(" ")}
+                              >
+                                {c.cripto === "MELI_DOLAR" ? "—" : fmtBRL(lucro ?? 0)}
+                              </td>
+
+                              <td
+                                className={[
+                                  "px-5 py-3 text-right font-semibold",
+                                  c.cripto === "MELI_DOLAR"
+                                    ? "text-slate-400 font-normal"
+                                    : pctNeg
+                                    ? "text-red-300"
+                                    : "text-emerald-200",
+                                ].join(" ")}
+                              >
+                                {c.cripto === "MELI_DOLAR" ? "—" : fmtPct(pct)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              {/* Coluna direita */}
+              <div className="grid gap-4">
+                {/* Renda fixa */}
+                <section className="rounded-2xl border border-white/10 bg-white/5">
+                  <div className="border-b border-white/10 px-5 py-4">
+                    <h2 className="text-base font-semibold">Renda Fixa</h2>
+                    <p className="mt-1 text-xs text-slate-300">Editável (ganho diário).</p>
+                  </div>
+
+                  <div className="px-5 py-4">
+                    {rendaFixa.length === 0 ? (
+                      <p className="text-sm text-slate-300">Nenhuma renda fixa cadastrada.</p>
+                    ) : (
+                      <div className="grid gap-3">
+                        {rendaFixa.map((rf) => (
+                          <div key={rf.id} className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:items-center">
+                            <div className="text-sm font-medium text-slate-200">{rf.nome}</div>
+
+                            <input
+                              defaultValue={rf.saldo.toLocaleString("pt-BR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                              inputMode="decimal"
+                              onBlur={(e) => atualizarRendaFixa(rf.id, e.target.value)}
+                              className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-right text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/20"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Resumo + ação */}
+                <section className="rounded-2xl border border-white/10 bg-white/5">
+                  <div className="border-b border-white/10 px-5 py-4">
+                    <h2 className="text-base font-semibold">Resumo do período</h2>
+                    <p className="mt-1 text-xs text-slate-300">Cutoff, lucro ajustado e saques.</p>
+                  </div>
+
+                  <div className="px-5 py-4">
+                    {!resumo ? (
+                      <div className="text-sm text-slate-300">
+                        <b className="text-slate-100">Sem resumo.</b>
+                        <div className="mt-2 text-xs text-slate-400">
+                          Você provavelmente ainda não criou um <b>cutoff</b> em{" "}
+                          <code className="rounded bg-black/30 px-1 py-0.5">cripto.cutoffs</code>.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid gap-2 text-sm text-slate-200">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-slate-300">Data do corte</span>
+                          <span className="font-medium">
+                            {new Date(resumo.cutoff_criado_em).toLocaleDateString("pt-BR")}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-slate-300">Saldo no corte</span>
+                          <span className="font-medium">{fmtBRL(resumo.saldo_cripto_no_corte)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-slate-300">Total sacado</span>
+                          <span className="font-medium">{fmtBRL(resumo.total_sacado_desde_corte)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-slate-300">Lucro ajustado</span>
+                          <span className="font-semibold">{fmtBRL(resumo.lucro_ajustado_periodo)}</span>
+                        </div>
+
+                        <div className="mt-3 flex flex-col gap-2">
+                          <button
+                            onClick={sacarAutomatico}
+                            disabled={(resumo.saques_permitidos_agora ?? 0) <= 0}
+                            className={[
+                              "w-full rounded-xl px-4 py-2 text-sm font-semibold transition",
+                              (resumo.saques_permitidos_agora ?? 0) > 0
+                                ? "bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
+                                : "bg-white/10 text-slate-400 cursor-not-allowed",
+                            ].join(" ")}
+                          >
+                            Sacar R$ 50 automaticamente
+                          </button>
+
+                          <div className="text-xs text-slate-400">
+                            Saques permitidos agora:{" "}
+                            <b className="text-slate-200">{resumo.saques_permitidos_agora}</b>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            {/* Registrar snapshot */}
+            <section className="mt-6 rounded-2xl border border-white/10 bg-white/5">
+              <div className="border-b border-white/10 px-5 py-4">
+                <h2 className="text-base font-semibold">Registrar atualização (snapshot)</h2>
+                <p className="mt-1 text-xs text-slate-300">
+                  Os campos já vêm carregados com o valor atual — altere só o que precisar.
+                </p>
+              </div>
+
+              <div className="px-5 py-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                  {ORDEM.map((k) => (
+                    <label key={k} className="grid gap-1.5">
+                      <span className="text-xs text-slate-300">{LABEL[k]}</span>
+                      <input
+                        value={form[k]}
+                        onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                        placeholder="ex.: 424,21"
+                        inputMode="decimal"
+                        className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-sky-500/40 focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
                   <button
-                    onClick={sacarAutomatico}
-                    disabled={(resumo.saques_permitidos_agora ?? 0) <= 0}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: "1px solid #333",
-                      background: (resumo.saques_permitidos_agora ?? 0) > 0 ? "#fff" : "#f2f2f2",
-                      cursor: (resumo.saques_permitidos_agora ?? 0) > 0 ? "pointer" : "not-allowed",
-                    }}
+                    onClick={registrarAtualizacao}
+                    className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-400"
                   >
-                    Sacar R$50 automaticamente
+                    Registrar atualização
+                  </button>
+
+                  <button
+                    onClick={verVencedora}
+                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-white/10"
+                  >
+                    Ver vencedora (≥ 3 dias)
+                  </button>
+
+                  <button
+                    onClick={carregarTudo}
+                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-white/10"
+                  >
+                    Recarregar
                   </button>
                 </div>
               </div>
-            )}
-          </section>
-        </>
-      )}
+            </section>
+
+            <div className="mt-8 text-xs text-slate-500">
+              Dica: você pode digitar valores com ponto ou vírgula (ex.: <b>60.88</b> ou <b>60,88</b>).
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
+
 }
