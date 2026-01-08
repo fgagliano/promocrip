@@ -61,8 +61,16 @@ function fmtBRL(v: number | null | undefined) {
 
 function fmtPct(v: number | null | undefined) {
   if (v === null || v === undefined || !Number.isFinite(v)) return "—";
-  return `${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+
+  // Se veio como fração (0.23), converte pra percentual (23)
+  const n = Math.abs(v) <= 1 ? v * 100 : v;
+
+  return `${n.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}%`;
 }
+
 
 function parseMoneySmart(input: string) {
   // Aceita: "60.88", "60,88", "6.088,00", "6,088.00", "6088", "6 088,00"
