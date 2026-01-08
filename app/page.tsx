@@ -448,6 +448,8 @@ const valor = parseMoney(novoValor);
                           <th className="px-5 py-3 text-right font-medium">Investido (D)</th>
                           <th className="px-5 py-3 text-right font-medium">Lucro (R$)</th>
                           <th className="px-5 py-3 text-right font-medium">Lucro (%)</th>
+                          <th className="px-5 py-3 text-right font-medium">Lucro (%)</th>
+
                         </tr>
                       </thead>
 
