@@ -791,7 +791,8 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                         ganhoNeg ? "text-red-300" : "text-emerald-200",
                       ].join(" ")}
                     >
-                      {fmtBRL(a.ganho_periodo)}
+                      {fmtBRL(ganhoExibido ?? 0)}
+
                     </div>
                     <div
                       className={[
@@ -862,7 +863,8 @@ const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
                         ganhoNeg ? "text-red-300" : "text-emerald-200",
                       ].join(" ")}
                     >
-                      {fmtBRL(a.ganho_periodo)}
+                      {fmtBRL(ganhoExibido ?? 0)}
+
                     </td>
 
                     <td className="py-3 px-4 text-right">
