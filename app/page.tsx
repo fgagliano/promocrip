@@ -461,7 +461,8 @@ const valor = parseMoney(novoValor);
                           const pct = temInvestido ? ((atual - inv) / inv) * 100 : null;
 
                           const lucroNeg = (lucro ?? 0) < 0;
-                          const pctNeg = (pct ?? 0) < 0;
+                          const pctNeg = pct !== null && pct !== undefined && pct < 0;
+
 
                           return (
                             <tr key={c.cripto} className="hover:bg-white/5">
