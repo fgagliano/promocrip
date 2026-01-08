@@ -730,6 +730,17 @@ const valor = parseMoney(novoValor);
         <div className="grid gap-3 sm:hidden">
           {aportes.map((a, idx) => {
             const ganhoNeg = (a.ganho_periodo ?? 0) < 0;
+const isCorrente = idx === 0 && resumo?.total_cripto_atual !== undefined && resumo?.total_cripto_atual !== null;
+
+const base = a.saldo_atual ?? (a.saldo_anterior + a.valor_aporte);
+const saldoCarteiraAgora = isCorrente ? (resumo!.total_cripto_atual ?? 0) : null;
+
+const ganhoExibido = isCorrente ? (saldoCarteiraAgora! - base) : a.ganho_periodo;
+const pctExibido = isCorrente
+  ? (base > 0 ? (ganhoExibido! / base) : null)
+  : a.pct_periodo;
+
+const ganhoNegExibido = (ganhoExibido ?? 0) < 0;
 
             return (
               <div
