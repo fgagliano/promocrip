@@ -20,10 +20,14 @@ type ResumoPeriodo = {
 type Aporte = {
   id: number;
   data_aporte: string;
-  valor: number;
-  saldo_base: number | null;
+  saldo_anterior: number;
+  valor_aporte: number;
+  saldo_atual: number;
+  ganho_periodo: number;
+  pct_periodo: number;
   observacao: string | null;
 };
+
 
 
 type RendaFixa = {
